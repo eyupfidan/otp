@@ -6,119 +6,104 @@ use Exception;
 use Ramsey\Uuid\Type\Integer;
 use SimpleXMLElement;
 
-class otp
-{   
-   
-    private $username;
-    private $password;
-    private $header;
-    public function __construct()
+class OTPService
+{
+    private string $username;
+    private string $password;
+    private string $header;
+
+    const API_URL = 'https://api.netgsm.com.tr/sms/send/otp';
+    const TIMEOUT = 30;
+
+    public function __construct(array $config)
     {
-     if(isset($_ENV['NETGSM_USERCODE']))
-      {
-          $this->username=$_ENV['NETGSM_USERCODE'];
-      }
-      else{
-          $this->username='x';
-      }
-      if(isset($_ENV['NETGSM_PASSWORD']))
-      {
-          $this->password=$_ENV['NETGSM_PASSWORD'];
-      }
-      else{
-          $this->password='x';
-      }
-      if(isset($_ENV['NETGSM_HEADER']))
-      {
-          $this->header=$_ENV['NETGSM_HEADER'];
-      }
-      else{
-          $this->header='x';
-      }
-        
+        $this->username = $config['username'] ?? 'x';
+        $this->password = $config['password'] ?? 'x';
+        $this->header = $config['header'] ?? 'x';
     }
-    
-    public function otp($data):array
+
+    public function sendOTP(array $data): array
     {
-        if(!isset($data['message'])){
-            
-            $response['durum']='message giriniz';
-            return $response;
+        $this->validateData($data);
+
+        $header = $data['header'] ?? $this->header;
+        if (empty($header)) {
+            throw new Exception('Header information is missing or invalid.');
         }
-        
-        if(!isset($data['no'])){
-            $response['durum']='Numara giriniz';
-            return $response;
+
+        $xmlData = $this->buildXMLData($data['message'], $data['no'], $header);
+        $response = $this->executeCurl($xmlData);
+        return $this->parseResponse($response);
+    }
+
+    private function validateData(array $data): void
+    {
+        if (empty($data['message'])) {
+            throw new Exception('Please provide a message.');
         }
-        if(!isset($data['header'])){
-            $header=$this->header;
-           
+
+        if (empty($data['no'])) {
+            throw new Exception('Please provide a number.');
         }
-        else{
-            $header=$data['header'];
-        }
-        if(empty($header))
-        {
-             $response['message']='header bilgisini kontrol ediniz.';
-             return $response;
-        }
-        $xmlData='<?xml version="1.0"?>
+    }
+
+    private function buildXMLData(string $message, string $number, string $header): string
+    {
+        return "<?xml version='1.0'?>
         <mainbody>
-           <header>
-               <usercode>'.$this->username.'</usercode>
-               <password>'.$this->password.'</password>
-               <msgheader>'.$header.'</msgheader>
-           </header>
-           <body>
-               <msg>
-                   '.$data['message'].'
-               </msg>
-               <no>'.$data['no'].'</no>
-           </body>
-        </mainbody>';
+            <header>
+                <usercode>{$this->username}</usercode>
+                <password>{$this->password}</password>
+                <msgheader>{$header}</msgheader>
+            </header>
+            <body>
+                <msg>{$message}</msg>
+                <no>{$number}</no>
+            </body>
+        </mainbody>";
+    }
+
+    private function executeCurl(string $xmlData): string
+    {
         $ch = curl_init();
-		curl_setopt($ch, CURLOPT_URL,'https://api.netgsm.com.tr/sms/send/otp');
-		curl_setopt($ch, CURLOPT_SSL_VERIFYHOST,2);
-		curl_setopt($ch, CURLOPT_SSL_VERIFYPEER,0);
-		curl_setopt($ch, CURLOPT_RETURNTRANSFER,1);
-		curl_setopt($ch, CURLOPT_HTTPHEADER, Array("Content-Type: text/xml"));
-		curl_setopt($ch, CURLOPT_TIMEOUT, 30);
-		curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlData);
-		$result = curl_exec($ch);
-       
-		
-        
-        $sonuc=array(
-            20=>'Mesaj metni ya da mesaj boyunu kontrol ediniz.',
-            30=>'Geçersiz kullanıcı adı , şifre veya kullanıcınızın API erişim izninin olmadığını gösterir.Ayrıca eğer API erişiminizde IP sınırlaması yaptıysanız ve sınırladığınız ip dışında gönderim sağlıyorsanız 30 hata kodunu alırsınız. API erişim izninizi veya IP sınırlamanızı , web arayüzden; sağ üst köşede bulunan ayarlar> API işlemleri menüsunden kontrol edebilirsiniz.',
-            40=>'Gönderici adınızı kontrol ediniz.',
-            41=>'Gönderici adınızı kontrol ediniz.',
-            50=>'Gönderilen numarayı kontrol ediniz.',
-            60=>'Hesabınızda OTP SMS Paketi tanımlı değildir, kontrol ediniz.',
-            70=>'	Input parametrelerini kontrol ediniz.',
-            80=>'Sorgulama sınır aşımı.(dakikada 100 adet gönderim yapılabilir.)',
-            100=>'Sistem hatası.',
-            
-            );
-            $donen = new SimpleXMLElement($result);
+        curl_setopt($ch, CURLOPT_URL, self::API_URL);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 2);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, ["Content-Type: text/xml"]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, self::TIMEOUT);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $xmlData);
+        $result = curl_exec($ch);
+        if (curl_errno($ch)) {
+            throw new Exception('CURL error: ' . curl_error($ch));
+        }
+        curl_close($ch);
 
-            $code=strval($donen->main->code);
-            
-            if($code==20||$code==30||$code==40||$code==41||$code==50||$code==60||$code==70||$code==80||$code==100)
-            {
-                $response["durum"]=$sonuc[$code];
-                $response["code"]=$code;
-            }
-            else{
-                $response["durum"]='Gönderim başarılı.';
-                
-                $jobid=strval(($donen->main->jobID[0]));
-                $response["jobid"]=$jobid;
-            }
+        return $result;
+    }
 
-           
-        
-        
-        return $response;
+    private function parseResponse(string $result): array
+    {
+        $parsedResult = new SimpleXMLElement($result);
+        $code = strval($parsedResult->main->code);
+        $errorCodes = [
+            20 => 'Check your message text or length.',
+            30 => 'Invalid username, password, or no API access.',
+            40 => 'Check your sender ID.',
+            50 => 'Check the recipient number.',
+            60 => 'No OTP SMS Package assigned to your account.',
+            70 => 'Check your input parameters.',
+            80 => 'Query limit exceeded.',
+            100 => 'System error.',
+        ];
+
+        if (array_key_exists($code, $errorCodes)) {
+            return ['status' => $errorCodes[$code], 'code' => $code];
+        }
+
+        return [
+            'status' => 'Sending successful.',
+            'jobId' => strval($parsedResult->main->jobID[0])
+        ];
     }
 }
