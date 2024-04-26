@@ -53,12 +53,25 @@ PHP 7.2.5 ve üzeri
 ## ÖRNEK
 
 ```php     
-        use Netgsm\Otp\otp;
-         $data=array('message'=>'test mesajı5','no'=>'553XXXXXXX','header'=>'MESAJ_BASLIGINIZ');
-        //header: isteğe bağlı olarak farklı header bilginizi girebilirsiniz. Default olarak .env dosyası  içerisinde belirtmiş olduğunuz header baz alınır.
-        $islem=new otp;
-        $sonuc=$islem->otp($data);
-        dd($sonuc);
+$config = [
+    'username' => 'your_netgsm_username',
+    'password' => 'your_netgsm_password',
+    'header' => 'your_default_header'
+];
+
+$otpService = new OTPService($config);
+
+$data = [
+    'message' => 'Your OTP is 123456',
+    'no' => '905xxxxxxxxx'
+];
+
+try {
+    $response = $otpService->sendOTP($data);
+    print_r($response); // or dd 
+} catch (Exception $e) {
+    echo 'Error: ' . $e->getMessage();
+}
         
 ```
 
