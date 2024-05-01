@@ -1,62 +1,66 @@
+# OTP Service
 
+Use the OTP Service for instant SMS deliveries such as passwords, confirmation codes, etc. SMS messages are delivered within 3 minutes and cannot be scheduled.
 
+## Contents
+- [Contact & Support](#contact--support)
+- [Documentation](#documentation)
+- [Supported Laravel Versions](#supported-laravel-versions)
+- [Supported Lumen Versions](#supported-lumen-versions)
+- [Supported Symfony Versions](#supported-symfony-versions)
+- [Supported PHP Versions](#supported-php-versions)
+- [Installation](#installation)
+- [Example](#example)
 
-# OTP 
+## Contact & Support
 
-Anlık SMS gönderimlerinde (şifre, onay kodu vs.) OTP Servisini kullanabilirsiniz.
-SMS'lerde zaman ayarı yapılamaz, 3 dakika içerisinde iletilir.
-## İçindekiler
-- [İletişim & Destek](#i̇letişim--destek)
-- [Doküman](#doküman)
-- [Supported](#Supported-Laravel-Versions)
-- [Kurulum](#kurulum)
-- [Örnek](#örnek)
-# İletişim & Destek
+For all your questions and suggestions related to the Netgsm API Service, you can send an email to teknikdestek@netgsm.com.tr.
 
- Netgsm API Servisi ile alakalı tüm sorularınızı ve önerilerinizi teknikdestek@netgsm.com.tr adresine iletebilirsiniz.
+## Documentation
 
-
-# Doküman 
-https://www.netgsm.com.tr/dokuman/
- API Servisi için hazırlanmış kapsamlı dokümana ve farklı yazılım dillerinde örnek amaçlı hazırlanmış örnek kodlamalara 
- [https://www.netgsm.com.tr/dokuman](https://www.netgsm.com.tr/dokuman) adresinden ulaşabilirsiniz.
-
-
-
+Access comprehensive documentation and sample code for different programming languages for the API Service at
+ Comprehensive documentation for the API Service and sample coding in different software languages 
+ Available from [https://www.netgsm.com.tr/dokuman](https://www.netgsm.com.tr/dokuman)
+ 
 ### Supported Laravel Versions
 
-Laravel 6.x, Laravel 7.x, Laravel 8.x, Laravel 9.x, 
+Supports Laravel versions 6.x, 7.x, 8.x, 9.x., 10.x., 11.x.
 
 ### Supported Lumen Versions
 
-Lumen 6.x, Lumen 7.x, Lumen 8.x, Lumen 9.x, 
+Supports Lumen versions 6.x, 7.x, 8.x, 9.x.
 
 ### Supported Symfony Versions
 
-Symfony 4.x, Symfony 5.x, Symfony 6.x
+Supports Symfony versions 4.x, 5.x, 6.x., 7.x.
 
-### Supported Php Versions
+### Supported PHP Versions
 
-PHP 7.2.5 ve üzeri
+Supports PHP version 7.2.5 and above.
 
-### Kurulum
+### Installation
 
-<b>composer require netgsm/otp </b>
+Install using Composer:
 
-.env  dosyası içerisinde NETGSM ABONELİK bilgileriniz tanımlanması zorunludur.  
+```bash
+composer require netgsm/otp
+```
 
-<b>NETGSM_USERCODE=""</b>  
-<b>NETGSM_PASSWORD=""</b>  
-<b>NETGSM_HEADER=""</b>  
+In your .env file, it is mandatory to define your NETGSM subscription information:
 
+```env
+NETGSM_USERCODE=""
+NETGSM_PASSWORD=""
+NETGSM_HEADER=""
 
-## ÖRNEK
+```
 
-```php     
+## Example
+```php
 $config = [
-    'username' => 'your_netgsm_username',
-    'password' => 'your_netgsm_password',
-    'header' => 'your_default_header'
+    'username' => $_ENV['NETGSM_USERCODE'],
+    'password' => $_ENV['NETGSM_PASSWORD'],
+    'header' => $_ENV['NETGSM_HEADER']
 ];
 
 $otpService = new OTPService($config);
@@ -68,30 +72,28 @@ $data = [
 
 try {
     $response = $otpService->sendOTP($data);
-    print_r($response); // or dd 
+    print_r($response); // or dd(response);
 } catch (Exception $e) {
     echo 'Error: ' . $e->getMessage();
 }
-        
+
 ```
 
-#### Başarılı istek örnek sonuç
-
+## Successful Request Example Output
 ```php
 Array
 (
-    [durum] => Gönderim başarılı.
-    [jobid] => 1310546758
+    [status] => Sending successful.
+    [jobId] => 1310546758
 )
 
 ```
 
-#### Başarısız istek örnek sonuç
-
+## Failed Request Example Output
 ```php
 Array
 (
-    [durum] => Gönderici adınızı kontrol ediniz.
+    [status] => Check your sender name.
     [code] => 41
 )
 
